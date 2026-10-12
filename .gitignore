@@ -65,6 +65,7 @@ StyleCopReport.xml
 *_h.h
 *.ilk
 *.meta
+!Assets/Scenes/*.unity.meta
 *.obj
 *.iobj
 *.pch
@@ -340,3 +341,4 @@ ASALocalRun/
 healthchecksdb
 Temp
 Library
+/build/

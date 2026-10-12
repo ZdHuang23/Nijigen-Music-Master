@@ -24,6 +24,10 @@ data.csv是以“,”分割的表单文件。各列内容分别为No歌曲编号
 使用excel编辑后保存的文件要转换为UTF-8编码，可使用“记事本”另存为功能来另存为UTF-8编码格式的文件。
 其中登记的文件名不能有英文逗号“,”。
 
+## Android 打包
+
+目标 **minSdk 24 / targetSdk 36**，ABI 为 **armeabi-v7a + arm64-v8a**（IL2CPP）。本机出 APK/AAB 见 [docs/ANDROID_BUILD.md](docs/ANDROID_BUILD.md)。GitHub Actions 需在仓库 Secrets 中配置 `UNITY_LICENSE`、`UNITY_EMAIL`、`UNITY_PASSWORD` 后才会产出 Artifact **`NijigenMusicMaster-Android-apk`**。
+
 ## 如何使用  
 单击歌曲名称选择歌曲，此时可拖动进度条，再次点击歌曲名称则开始播放/暂停。进度条在歌曲更换时不会自动归零。
 歌曲列表的歌曲是随机排列的，需要随机重排请点击歌曲列表上方的重洗键。需要抽选歌牌时，点击屏幕右侧滑动条下方的选牌按钮调出选单，点击需要的歌牌进行选择，之后再次点击选牌按钮即可应用当前选择。
