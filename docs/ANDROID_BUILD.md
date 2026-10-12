@@ -125,7 +125,25 @@ aapt dump badging path/to/app.apk | egrep 'package|sdkVersion|native-code'
 
 ## 云端构建尝试
 
-本环境没有安装 Unity，也没有 `UNITY_LICENSE`。国际版 Linux 编辑器可以下载（changeset `6dd1c08eedfa`，约 1.7GB），但 2019.4 批处理出包需要有效许可证，且官方 Linux 组件列表里没有独立的 Android Build Support `.tar.xz`（只有 macOS `.pkg` / Windows `.exe`）。因此这里不能产出可安装的 ARM APK。请在已激活 Unity 的机器上按上面的导出流程构建。
+在本环境实际执行过一次，没有产出 APK/AAB。
+
+1. 下载并解压国际版编辑器 **2019.4.20f1**（changeset `6dd1c08eedfa`）：`LinuxEditorInstaller/Unity.tar.xz`（1773050516 字节）。工程记录的中国版 changeset `ff6a2c17d3ab` 在 `download.unity3d.com` 上是 404。
+2. 官方 `download.html` 没有 Linux 版 Android Build Support `.tar.xz`，只有 macOS `.pkg`（329324545 字节）。已用 7-Zip 解开并放进 `Editor/Data/PlaybackEngines/AndroidPlayer`。该包不含 NDK/SDK/OpenJDK，Hub 会另外下载。
+3. Ubuntu 24.04 缺少 `libgconf-2.so.4`，补装 jammy 的 `libgconf-2-4` 后编辑器可以启动。
+4. 执行：
+
+```bash
+/path/to/Editor/Unity -batchmode -nographics -quit \
+  -logFile /tmp/unity-license.log \
+  -projectPath /path/to/Nijigen-Music-Master
+```
+
+退出码 **1**。日志要点：
+
+- `LicensingClient` 因系统没有 ICU 语言包崩溃（`Couldn't find a valid ICU package`）
+- 回退后：`Cancelling DisplayDialog: Failed to activate/update license Missing or bad username or password`
+
+环境里没有 `UNITY_LICENSE`、序列号或 Unity 账号。没有许可证时批处理不会进入 Gradle，因此没有 `build/android/NijigenMusicMaster.apk`。请在已激活许可证的机器上按上面的导出流程构建。
 
 ## 剩余风险
 
