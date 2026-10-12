@@ -23,6 +23,7 @@ public static class MusicLoader
 
 	public static void InitMusicLoader()
 	{
+		AndroidStorageAccess.RequestIfNeeded();
 		musicfolders = LoadSongDataFromDisk();
 		//csv load complete
 		MusicDirFilter(musicfolders, FolderFilter);
