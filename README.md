@@ -26,7 +26,7 @@ data.csv是以“,”分割的表单文件。各列内容分别为No歌曲编号
 
 ## Android 打包
 
-目标 **minSdk 24 / targetSdk 36**，ABI 为 **armeabi-v7a + arm64-v8a**（IL2CPP）。本机出 APK/AAB 的步骤见 [docs/ANDROID_BUILD.md](docs/ANDROID_BUILD.md)。
+目标 **minSdk 24 / targetSdk 36**，ABI 为 **armeabi-v7a + arm64-v8a**（IL2CPP）。本机出 APK/AAB 见 [docs/ANDROID_BUILD.md](docs/ANDROID_BUILD.md)。GitHub Actions 需在仓库 Secrets 中配置 `UNITY_LICENSE`、`UNITY_EMAIL`、`UNITY_PASSWORD` 后才会产出 Artifact **`NijigenMusicMaster-Android-apk`**。
 
 ## 如何使用  
 单击歌曲名称选择歌曲，此时可拖动进度条，再次点击歌曲名称则开始播放/暂停。进度条在歌曲更换时不会自动归零。

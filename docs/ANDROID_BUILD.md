@@ -24,7 +24,7 @@
    - Android SDK Platform **36**
    - Build-Tools **36.x**
 3. 外部工具里 JDK 指向 Unity 自带的 OpenJDK（8 或 11）。不要让 2019.4 编辑器使用 JDK 17/21。
-4. 磁盘上准备歌包目录（运行时用，不影响出包）。Android 上路径见 `FileManager.GetMusicDataPath()`：优先 `Application.persistentDataPath/MusicData`，否则 `/storage/emulated/0/NijigenMusicMaster/MusicData` 等。
+4. 磁盘上准备歌包目录（运行时用，不影响出包）。**Android 10（API 30）及以上**固定使用 `Application.persistentDataPath/MusicData`（应用专属目录，无需「所有文件访问」）。更低版本仍可读 `/storage/emulated/0/NijigenMusicMaster/MusicData` 等旧路径。
 
 国际版编辑器：
 
@@ -48,8 +48,7 @@ https://download.unity3d.com/download_unity/6dd1c08eedfa/LinuxEditorInstaller/Un
 **File → Build Settings**
 
 - 平台切到 Android
-- 场景顺序：`Assets/Scenes/gameplay.unity`，然后 `Assets/Scenes/songselect.unity`  
-  仓库忽略了 `*.meta`，场景 GUID 不能写进 `EditorBuildSettings`。批处理脚本 `AndroidBuild.BuildApk` 使用上述路径。
+- 场景顺序：`gameplay` → `songselect`（已写入 `EditorBuildSettings.asset`，并提交 `Assets/Scenes/*.unity.meta`）
 
 ## 在编辑器里直接出 APK
 
@@ -123,6 +122,26 @@ aapt dump badging path/to/app.apk | egrep 'package|sdkVersion|native-code'
 - `targetSdkVersion:'36'`
 - `native-code: 'armeabi-v7a' 'arm64-v8a'`（至少包含 `arm64-v8a`）
 
+## GitHub Actions（game-ci）
+
+工作流：`.github/workflows/build-android.yml`
+
+- 镜像：`game-ci/unity-builder@v4`，**unityVersion 固定为 `2019.4.20f1`**（与工程文件里的 `2019.4.20f1c1` 接近；CI 不使用中国版 changeset）。
+- 构建方法：`AndroidBuild.BuildApk`（输出 APK，IL2CPP，ARMv7+ARM64）。
+- 成功时上传 Artifact：**`NijigenMusicMaster-Android-apk`**（路径 `build/Android/**/*.apk` 或 `build/android/**/*.apk`）。
+
+在仓库 **Settings → Secrets and variables → Actions** 中配置（须使用你自己的 Unity 账号，不要提交到仓库）：
+
+| Secret | 说明 |
+| --- | --- |
+| `UNITY_LICENSE` | Unity 许可证文件内容（`.ulf`）。按 [game.ci 激活文档](https://game.ci/docs/github/activation) 在本机生成后粘贴。 |
+| `UNITY_EMAIL` | Unity ID 登录邮箱。 |
+| `UNITY_PASSWORD` | Unity ID 密码。 |
+
+未配置上述 Secret 时，工作流会在许可证步骤失败，**不会产生 APK**。Personal 许可证约每 2 周需重新激活并更新 `UNITY_LICENSE`。
+
+触发方式：`push`/`pull_request` 到 `master`、本仓库 `cursor/**` 分支，或手动 **workflow_dispatch**。
+
 ## 云端构建尝试
 
 在本环境实际执行过一次，没有产出 APK/AAB。
@@ -149,7 +168,7 @@ aapt dump badging path/to/app.apk | egrep 'package|sdkVersion|native-code'
 
 - **2019.4 与 API 36**：编辑器内一键 Build 很可能失败。以「导出 + `upgrade_exported_android_gradle.py`」为准。长期建议把工程升级到 Unity 2022.3 LTS 或 Unity 6。
 - **IL2CPP / NDK**：导出后的 native 库仍由 Unity 2019.4 的 NDK 编出。AGP 8 只负责打包；不要让新 NDK 重编 `libil2cpp.so`，除非接受链接错误。
-- **共享存储**：`MANAGE_EXTERNAL_STORAGE` 在 Google Play 上属于受限权限。自制分发可以引导用户授权；上架需要改成 SAF（系统文档选择器）或只读 `persistentDataPath`。
+- **歌包路径**：API 30+ 仅使用 `persistentDataPath/MusicData`；用户需自行把 `MusicData` 拷到该目录（可用 `adb push`）。旧版共享目录路径仅用于 API 29 及以下。
 - **签名**：默认调试证书不能上架。发布前在 Player Settings 配置正式 keystore，或对导出工程配置 `signingConfigs.release`。
-- **`.meta` 被 gitignore**：首次打开会重新生成 GUID。场景引用可能要在编辑器里重新挂一次脚本。这是仓库原有状态。
-- **`READ_MEDIA_IMAGES`**：歌包封面按文件路径读取，不走 MediaStore。该权限不能替代「所有文件访问」。
+- **`.meta`**：仅提交 `Assets/Scenes/*.unity.meta`；其余资源仍忽略 meta，首次打开可能重新生成 GUID。
+- **`READ_MEDIA_IMAGES`**：歌包封面按文件路径读取；在 scoped 目录下通常不需要该权限，但为兼容旧路径仍保留声明。

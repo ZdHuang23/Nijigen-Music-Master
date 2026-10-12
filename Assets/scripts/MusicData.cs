@@ -174,20 +174,29 @@ public static class FileManager
 			System.Environment.CurrentDirectory + "/MusicData",
 			"D:/Unitykit/MusicData"	//DEBUG
 		};
-		string[] MUSICPATHS_ANDROID = new string[]
-		{
-			Application.persistentDataPath + "/MusicData"
-		};
 		if (Application.platform == RuntimePlatform.Android)
         {
-			for (int i = 0; i < MUSICPATHS_ANDROID.Length; i++)
+			var scopedPath = AndroidStorageAccess.PersistentMusicDataPath;
+#if UNITY_ANDROID && !UNITY_EDITOR
+			if (AndroidStorageAccess.GetSdkInt() >= 30)
 			{
-				if (Directory.Exists(MUSICPATHS_ANDROID[i]))
-				{
-					return MUSICPATHS_ANDROID[i];
-				}
+				AndroidStorageAccess.EnsurePersistentMusicDataDirectory();
+				return scopedPath;
 			}
-			return GetAndroidMusicDataFilesDir();
+#endif
+			if (Directory.Exists(scopedPath))
+			{
+				return scopedPath;
+			}
+
+			var legacyPath = GetAndroidMusicDataFilesDir();
+			if (!string.IsNullOrEmpty(legacyPath))
+			{
+				return legacyPath;
+			}
+
+			AndroidStorageAccess.EnsurePersistentMusicDataDirectory();
+			return scopedPath;
 		}
 		else if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
         {

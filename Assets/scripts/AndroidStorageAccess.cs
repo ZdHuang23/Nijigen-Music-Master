@@ -1,59 +1,59 @@
+using System.IO;
 using UnityEngine;
 
 /// <summary>
-/// Song packs are read from a user folder on shared storage. Android 11+ with targetSdk 30+
-/// blocks that path unless the user grants All files access.
+/// Android 10+ uses app-scoped storage under persistentDataPath. Legacy shared-storage
+/// folders are only used on older API levels.
 /// </summary>
 public static class AndroidStorageAccess
 {
-    public static void RequestIfNeeded()
+    public static string PersistentMusicDataPath
+    {
+        get { return Application.persistentDataPath + "/MusicData"; }
+    }
+
+    public static void PrepareForMusicLoading()
     {
 #if UNITY_ANDROID && !UNITY_EDITOR
-        try
-        {
-            using (var version = new AndroidJavaClass("android.os.Build$VERSION"))
-            {
-                int sdk = version.GetStatic<int>("SDK_INT");
-                if (sdk <= 32 &&
-                    !UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.ExternalStorageRead))
-                {
-                    UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.ExternalStorageRead);
-                }
+        EnsurePersistentMusicDataDirectory();
 
-                if (sdk >= 30)
-                {
-                    using (var environment = new AndroidJavaClass("android.os.Environment"))
-                    {
-                        if (!environment.CallStatic<bool>("isExternalStorageManager"))
-                        {
-                            OpenAllFilesAccessSettings();
-                        }
-                    }
-                }
-            }
-        }
-        catch (System.Exception exception)
+        var sdk = GetSdkInt();
+        if (sdk >= 30)
         {
-            Debug.LogWarning("Android storage permission request failed: " + exception.Message);
+            return;
+        }
+
+        if (sdk >= 23 &&
+            sdk <= 32 &&
+            !UnityEngine.Android.Permission.HasUserAuthorizedPermission(UnityEngine.Android.Permission.ExternalStorageRead))
+        {
+            UnityEngine.Android.Permission.RequestUserPermission(UnityEngine.Android.Permission.ExternalStorageRead);
         }
 #endif
     }
 
-#if UNITY_ANDROID && !UNITY_EDITOR
-    private static void OpenAllFilesAccessSettings()
+    public static void EnsurePersistentMusicDataDirectory()
     {
-        using (var unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
-        using (var activity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
-        using (var uriClass = new AndroidJavaClass("android.net.Uri"))
-        using (var intent = new AndroidJavaObject(
-            "android.content.Intent",
-            "android.settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION"))
+        var path = PersistentMusicDataPath;
+        if (!Directory.Exists(path))
         {
-            string packageName = activity.Call<string>("getPackageName");
-            var uri = uriClass.CallStatic<AndroidJavaObject>("parse", "package:" + packageName);
-            intent.Call<AndroidJavaObject>("setData", uri);
-            activity.Call("startActivity", intent);
+            Directory.CreateDirectory(path);
+            Debug.Log("Created MusicData directory: " + path);
         }
+    }
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+    public static int GetSdkInt()
+    {
+        using (var version = new AndroidJavaClass("android.os.Build$VERSION"))
+        {
+            return version.GetStatic<int>("SDK_INT");
+        }
+    }
+#else
+    public static int GetSdkInt()
+    {
+        return 0;
     }
 #endif
 }
